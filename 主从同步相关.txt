@@ -1,0 +1,33 @@
+slave
+
+mysqlbinlog --base64-output=decode-rows -v /data/mysql6026/relaylog/mysql-relay-bin.000065  |  grep -e "^##* UPDATE" -e "^##* INSERT" -e "^##* DELETE" -e "^##* REPLACE" -i -e "^update" -e "^insert" -e "^delete" -e "^replace" >/1.log
+
+SHOW SLAVE STATUS
+
+SHOW MASTER LOGS
+
+SHOW BINLOG EVENTS IN "mysql-bin.000581"
+
+
+SHOW PROCESSLIST
+
+
+SHOW VARIABLES LIKE '%relay%';
+
+
+SHOW BIN
+
+
+mysqlbinlog
+
+
+---------------------------------------------------------------------------------------------------------------------
+master
+
+SHOW MASTER STATUS
+
+SHOW MASTER LOGS 
+
+SHOW BINLOG EVENTS IN "mysql-bin.000654"
+
+SHOW SLAVE HOSTS
