@@ -2,7 +2,7 @@
 
 folderSize=10000000 #unit K default 10000000 10GB
 dirc=('/home/work/hotel/dda/dda3/logs/' '/home/work/hotelmis/tomcat_8110/logs/' '/home/work/hotelmis/tomcat_8111/logs/' '/home/work/hotelmis/tomcat_8112/logs/')
-
+echo '========== at' $( date "+%Y-%m-%d %H:%M:%S" ) 'execute clean up =========='
 for dir in ${dirc[*]}
 do
   echo $dir clearing...
@@ -31,4 +31,8 @@ do
     echo 'folder is not bigger(size:' $i 'KB),skip clean up'
     echo ''
   fi
+
 done
+
+#crontab -l  0 23 * * * /bin/sh /home/tester/script/clear_logs.sh >> /home/tester/script/clear_logs.log
+
