@@ -1,10 +1,10 @@
 USE [msdb]
 GO
-/****** Object:  Job [清除自动化订单]    Script Date: 12/12/2014 17:29:45 ******/
+/****** Object:  Job [清除自动化订单]    Script Date: 12/15/2014 14:18:44 ******/
 BEGIN TRANSACTION
 DECLARE @ReturnCode INT
 SELECT @ReturnCode = 0
-/****** Object:  JobCategory [[Uncategorized (Local)]]]    Script Date: 12/12/2014 17:29:45 ******/
+/****** Object:  JobCategory [[Uncategorized (Local)]]]    Script Date: 12/15/2014 14:18:44 ******/
 IF NOT EXISTS (SELECT name FROM msdb.dbo.syscategories WHERE name=N'[Uncategorized (Local)]' AND category_class=1)
 BEGIN
 EXEC @ReturnCode = msdb.dbo.sp_add_category @class=N'JOB', @type=N'LOCAL', @name=N'[Uncategorized (Local)]'
@@ -22,9 +22,9 @@ EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'清除自动化订单',
 		@delete_level=0, 
 		@description=N'No description available.', 
 		@category_name=N'[Uncategorized (Local)]', 
-		@owner_login_name=N'AutoTester', @job_id = @jobId OUTPUT
+		@owner_login_name=N'sa', @job_id = @jobId OUTPUT
 IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
-/****** Object:  Step [清除自动化订单]    Script Date: 12/12/2014 17:29:46 ******/
+/****** Object:  Step [清除自动化订单]    Script Date: 12/15/2014 14:18:45 ******/
 EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'清除自动化订单', 
 		@step_id=1, 
 		@cmdexec_success_code=0, 
@@ -103,9 +103,26 @@ delete from bdg.dbo.reserve_his where reser_no not in (select reser_no from rese
 		@database_name=N'bdg', 
 		@flags=0
 IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
-/****** Object:  Step [初始化Task]    Script Date: 12/12/2014 17:29:46 ******/
+/****** Object:  Step [初始化Task]    Script Date: 12/15/2014 14:18:45 ******/
 EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'初始化Task', 
 		@step_id=2, 
+		@cmdexec_success_code=0, 
+		@on_success_action=4, 
+		@on_success_step_id=3, 
+		@on_fail_action=4, 
+		@on_fail_step_id=3, 
+		@retry_attempts=0, 
+		@retry_interval=0, 
+		@os_run_priority=0, @subsystem=N'TSQL', 
+		@command=N'-- 初始化Task 状态，TaskIDlist里的状态更新为1，其他task状态更新为0
+-- 多个TaskIDList用半角逗号隔开，默认将40,41,42,43,44,45,46,47,48开启
+EXEC [dbo].[initTask] @TaskIDList = ''''', 
+		@database_name=N'Hotel_Schedule', 
+		@flags=0
+IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
+/****** Object:  Step [初始化Job]    Script Date: 12/15/2014 14:18:45 ******/
+EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'初始化Job', 
+		@step_id=3, 
 		@cmdexec_success_code=0, 
 		@on_success_action=1, 
 		@on_success_step_id=0, 
@@ -114,10 +131,11 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'初始化Ta
 		@retry_attempts=0, 
 		@retry_interval=0, 
 		@os_run_priority=0, @subsystem=N'TSQL', 
-		@command=N'-- 初始化Task 状态，TaskIDlist里的状态更新为1，其他task状态更新为0
--- 多个TaskIDList用半角逗号隔开，默认将40,41,42,43,44,45,46,47,48开启
-EXEC [dbo].[initTask] @TaskIDList = ''''', 
-		@database_name=N'Hotel_Schedule', 
+		@command=N'EXEC	[dbo].[initJob]
+	@JobListEnabledOn = N''''''DBD2@HotelBlockOrders'''',''''DBD3@更新EBookingMIS用户在线状态'''',''''DBD3@更新酒店在线状态'''''',
+	@JobListEnabledOff = N''''''DBD3@启用AttackBlacklist被封的IP''''''
+GO', 
+		@database_name=N'msdb', 
 		@flags=0
 IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
 EXEC @ReturnCode = msdb.dbo.sp_update_job @job_id = @jobId, @start_step_id = 1
