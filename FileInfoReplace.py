@@ -21,7 +21,7 @@ def replace(replaceFile,strFind,strRepl):
         #print newFileInfo
         f.close
 
-        f = open('replaceFile','w')
+        f = open(replaceFile,'w')
         f.write(newFileInfo)
         f.close
         
