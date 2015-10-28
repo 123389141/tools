@@ -1,0 +1,52 @@
+var prefixLen = 0;
+
+function GetPrefix()
+{
+	var out = "";
+	for(var i = 0; i < prefixLen; i++)
+	{
+		out += "\t";
+	}
+	return out;
+}
+
+function BuffJoin(buf)
+{
+	var prefix = GetPrefix();
+	var result = "\n" + prefix + buf.join(",\n" + prefix);
+	prefixLen--;
+	result += "\n" + GetPrefix();
+	return result+'';
+}
+
+function FormatJson(obj)
+{
+if (!obj) { return "0"; }
+	switch (obj.constructor)
+	{
+		case String: return '"' + obj.replace(/\"/g, "\\\"").replace(/\n/g, "\\n") + '"';
+		case Number: return obj.toString();
+		case Boolean: return obj.toString();
+		case Array :
+			prefixLen++;
+			var buf = [];
+			for (i in obj)
+			{
+				buf.push(FormatJson(obj[i]))
+			}
+			return "[" + BuffJoin(buf) + "]"
+		case Object:
+			prefixLen++;
+			var buf = []
+			for (k in obj)
+			{
+				buf.push(k + ' : ' + FormatJson(obj[k]))
+			}
+			return "{" + BuffJoin(buf) + "}"
+		default: return "0";
+	}
+}
+
+var s = document.selection.Text;
+var obj = eval("(" + s + ")");
+document.selection.Text = FormatJson(obj);
